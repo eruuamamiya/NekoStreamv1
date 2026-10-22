@@ -8,7 +8,7 @@ const cfg = {
   KURAMA:   process.env.KURAMA || 'https://api.nekostream.online/kuramanime', // sumber banner/poster
   SITE:     (process.env.SITE_URL || 'https://v1.nekostream.online').replace(/\/$/, ''),   // alamat situs (env SITE_URL bisa menimpa)
   CHANNEL:  (process.env.CHANNEL || 'https://whatsapp.com/channel/0029VbCT7xIAjPXN42MZrF32').trim(), // link saluran ATAU 1203...@newsletter
-  PAIR:     (process.env.PAIR_NUMBER || '6281287892264').replace(/\D/g, ''), // nomor WA bot (kosongkan lewat PAIR_NUMBER= untuk login QR)
+  PAIR:     (process.env.PAIR_NUMBER || '').replace(/\D/g, ''), // nomor WA bot (kosongkan lewat PAIR_NUMBER= untuk login QR)
   EVERY:    Math.max(1, +process.env.INTERVAL_MIN || 10) * 60000,
   MAX:      Math.max(1, +process.env.MAX_PER_CYCLE || 5),
   DELAY:    4000,                                               // jeda antar kiriman (ms)
