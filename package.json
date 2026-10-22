@@ -1,0 +1,13 @@
+{
+  "name": "nekostream-wa-bot",
+  "version": "1.0.0",
+  "description": "Bot WhatsApp Saluran: notifikasi anime baru update NekoStream",
+  "main": "bot.js",
+  "scripts": { "start": "node bot.js" },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "@whiskeysockets/baileys": "latest",
+    "pino": "^9.0.0",
+    "qrcode-terminal": "^0.12.0"
+  }
+}
