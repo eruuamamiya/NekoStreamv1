@@ -134,6 +134,33 @@ async function resolveChannel() {
   st.channelJid = meta.id; st.channelSrc = c; save(); return st.channelJid;
 }
 
+// Cek sekali: akun bot harus OWNER/ADMIN saluran, kalau hanya pengikut kiriman ditolak diam-diam
+let roleChecked = false;
+async function checkRole(jid) {
+  if (roleChecked) return; roleChecked = true;
+  try {
+    const m = await sock.newsletterMetadata('jid', jid);
+    const role = (m && (m.viewer_metadata && m.viewer_metadata.role || m.role)) || '';
+    console.log('Peran akun bot di saluran:', role || '(tidak diketahui)', '| pengikut:', (m && m.subscribers) ?? '?');
+    if (role && !/OWNER|ADMIN/i.test(role)) console.warn('⚠️  Akun bot BUKAN admin/pemilik saluran -> pesan tidak akan muncul. Jadikan nomor ini admin saluran.');
+  } catch (e) { console.warn('Cek peran saluran gagal:', e.message); roleChecked = false; }
+}
+
+// Mode tes: jalankan dengan SEND_TEST=1 untuk mengirim satu pesan percobaan ke saluran
+async function selfTest() {
+  try {
+    const jid = await resolveChannel(); await checkRole(jid);
+    const r = await sock.sendMessage(jid, { text: '✅ Tes bot NekoStream ' + new Date().toLocaleTimeString() });
+    console.log('Tes 1/2 (teks) dikirim ke', jid, '| id pesan:', r && r.key && r.key.id);
+    await sleep(3000);
+    const res = await fetch(cfg.API + '/ongoing?page=1', { signal: AbortSignal.timeout(20000) });
+    const list = findList(((await res.json()).data) ?? {});
+    if (!list.length) { console.log('Tes 2/2 dilewati: daftar ongoing kosong.'); return; }
+    const r2 = await send(jid, list[0]);
+    console.log('Tes 2/2 (notifikasi + gambar:', ttl(list[0]) + ') dikirim | id pesan:', r2 && r2.key && r2.key.id, '— cek mana yang muncul di saluran.');
+  } catch (e) { console.error('Tes gagal:', e.message); }
+}
+
 async function send(jid, o) {
   const cap = caption(o);
   // urutan: banner Kuramanime -> poster Otakudesu -> teks saja
@@ -160,7 +187,7 @@ async function cycle() {
     }
     const fresh = diff(list, st.seen).slice(0, cfg.MAX).reverse(); // paling lama dulu
     if (!fresh.length) { console.log(new Date().toLocaleTimeString(), 'Tidak ada update baru.'); return; }
-    const jid = await resolveChannel();
+    const jid = await resolveChannel(); await checkRole(jid);
     for (let i = 0; i < fresh.length; i++) {
       const o = fresh[i];
       if (!open) { console.log('Koneksi putus di tengah pengiriman, dilanjutkan di siklus berikutnya.'); break; }
@@ -198,7 +225,7 @@ async function start() {
         console.log('Scan QR di atas lewat WhatsApp > Perangkat tertaut.');
       }
     }
-    if (connection === 'open') { open = true; console.log('✅ WhatsApp tersambung.'); cycle(); }
+    if (connection === 'open') { open = true; console.log('✅ WhatsApp tersambung.'); if (process.env.SEND_TEST) selfTest(); cycle(); }
     if (connection === 'close') {
       open = false;
       const code = lastDisconnect && lastDisconnect.error && lastDisconnect.error.output && lastDisconnect.error.output.statusCode;
